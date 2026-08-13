@@ -4,8 +4,6 @@ Emergency remedial action after **N-1 line outages** on the IEEE 39-bus system.
 
 An LLM (or a simple rule) **only picks which generators to use**. A sequential linear program (SLP) computes **ΔP / ΔVset**. Physics checks (Check-0 / Check-1) accept or reject the action. If that fails, a load-shedding **fallback** keeps the grid safe.
 
-No API key is required to reproduce OPF and Rule+SLP baselines.
-
 ---
 
 ## What it does
@@ -54,16 +52,16 @@ LLM retries with a physics hint (up to 5 rounds). Rule and OPF do not retry.
 
 ---
 
-## Results (no API, `seed=42`, 20 cases)
+## Results (`seed=42`, 20 cases)
 
-| | OPF (L2) | OPF (L1) | ΔV-only | Rule+SLP |
-|--|----------|----------|---------|----------|
-| Intent success (no fallback) | 17/20 | 15/20 | 8/20 | 15/20 |
-| Overall success | **20/20** | **20/20** | **20/20** | 19/20 |
-| Mean `J_eval` (intent-success) | 68.2 | 59.8 | 10.4 | **5.8** |
-| Mean actuators | 9.0 | 9.0 | 9.0 | **3.2** |
+| | OPF (L2) | OPF (L1) | ΔV-only | Rule+SLP | LLM-RA |
+|--|----------|----------|---------|----------|--------|
+| Intent success (no fallback) | 17/20 | 15/20 | 8/20 | 15/20 | 14/20 |
+| Overall success | **20/20** | **20/20** | **20/20** | 19/20 | 19/20 |
+| Mean `J_eval` (intent-success) | 68.2 | 59.8 | 10.4 | 5.8 | **2.6** |
+| Mean actuators | 9.0 | 9.0 | 9.0 | 3.2 | **2.4** |
 
-Sparse voltage control is cheap. LLM-RA numbers need an Anthropic key to refresh.
+Sparse voltage control is cheap. LLM-RA keeps `Σ|ΔP|≈0` on intent-success cases and uses fewer generators than OPF.
 
 ---
 
@@ -77,20 +75,13 @@ cd LLM_N1_Grid_Control
 
 pip install -r requirements.txt
 
-# OPF + Rule+SLP (no paid API)
+export ANTHROPIC_API_KEY='sk-ant-...'
 python -m poc.run_poc
 
 python -m unittest tests.test_retry_semantics
 ```
 
-Optional LLM-RA:
-
-```bash
-export ANTHROPIC_API_KEY='sk-ant-...'
-python -m poc.run_poc
-```
-
-Needs Python 3.8+ and a working `pandapower` OPF stack (`pypower`).
+Needs Python 3.8+, `anthropic`, and a working `pandapower` OPF stack.
 
 ---
 
@@ -98,7 +89,7 @@ Needs Python 3.8+ and a working `pandapower` OPF stack (`pypower`).
 
 ```
 .
-├── README.md              this page (English)
+├── README.md              this page
 ├── docs/paper.md          full Chinese write-up
 ├── poc/                   runnable package
 │   ├── scenario.py        N-1 case generator
